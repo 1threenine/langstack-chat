@@ -41,12 +41,12 @@ def main():
 
             agent = create_agent(
                 llm,
-                tools=[get_weather, get_date, get_news, web_search],
+                tools=[get_weather, get_date, get_news, web_search, get_url],
                 system_prompt="You are a helpful assistant",
                 checkpointer=checkpointer,
             )
 
-            thread_config = {"configurable": {"thread_id": "2"}}
+            thread_config = {"configurable": {"thread_id": "3"}}
             while True:
                 q = questionary.text(" User:").ask()
 

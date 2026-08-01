@@ -22,6 +22,12 @@ def web_search(query: str) -> List:
     return DDGS().text(query, max_results=5)
 
 @tool
+@with_loading("Fetching website content")
+def get_url(url: str) -> List:
+    """Fetch a URL and extract its content."""
+    return DDGS().extract(url)
+
+@tool
 @with_loading("Searching On Web")
 def get_news(query: str) -> List:
     """Get news about the query"""
