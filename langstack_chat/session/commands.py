@@ -1,0 +1,49 @@
+import uuid
+import questionary
+from langstack_chat.session.threads import get_threads_postgres, get_threads_sqlite
+from langstack_chat.utils.console import console
+
+SQLITE_PATH = "chat_sessions.db"
+
+
+def handle_slash_command(thread_config: dict, checkpointer, db_choice: str) -> dict:
+    action = questionary.select(
+        "CLI Options:",
+        choices=[
+            questionary.Choice("New thread", value="new_thread"),
+            questionary.Choice("Switch thread", value="switch_thread"),
+            questionary.Choice("Delete thread", value="delete_thread"),
+            questionary.Choice("Change model", value="change_model"),
+            questionary.Choice("Change memory mode", value="change_memory"),
+            questionary.Choice("Cancel", value="cancel"),
+        ],
+    ).ask()
+
+    def _get_threads():
+        return get_threads_sqlite(SQLITE_PATH) if db_choice == "sqlite" else get_threads_postgres()
+
+    if action == "new_thread":
+        tid = str(uuid.uuid4())
+        thread_config["configurable"]["thread_id"] = tid
+        console.print(f"[green]New thread:[/green] [bold]{tid}[/bold]")
+
+    elif action == "switch_thread":
+        threads = _get_threads()
+        if not threads:
+            console.print("[yellow]No saved threads.[/yellow]")
+        else:
+            selected = questionary.select("Select thread:", choices=threads).ask()
+            thread_config["configurable"]["thread_id"] = selected
+            console.print(f"[green]Switched to:[/green] [bold]{selected}[/bold]")
+
+    elif action == "delete_thread":
+        threads = _get_threads()
+        if not threads:
+            console.print("[yellow]No saved threads.[/yellow]")
+        else:
+            selected = questionary.select("Delete which thread?", choices=threads).ask()
+            if questionary.confirm(f"Delete '{selected}'?").ask() and checkpointer:
+                checkpointer.delete_thread(selected)
+                console.print(f"[red]Deleted:[/red] [bold]{selected}[/bold]")
+
+    return thread_config
