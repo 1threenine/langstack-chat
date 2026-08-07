@@ -4,7 +4,9 @@ from typing import List
 from langchain.tools import tool
 from langstack_chat.utils.console import console
 from functools import wraps
+from langstack_chat.utils.logging import get_logger
 
+logger = get_logger(__name__)
 
 def with_loading(message="Calling tool..."):
     def decorator(func):
@@ -14,7 +16,7 @@ def with_loading(message="Calling tool..."):
                 with console.status(f"[bold cyan]{message}", spinner="dots"):
                     return func(*args, **kwargs)
             except Exception as e:
-                console.print(f"[red]Tool error in `{func.__name__}`:[/red] {e}")
+                logger.error("Tool `%s` failed: %s", func.__name__, e, exc_info=False)
                 return f"Error: {str(e)}"
         return wrapper
     return decorator
