@@ -8,9 +8,11 @@ from langgraph.checkpoint.sqlite import SqliteSaver
 from langstack_chat.config import CliConfig
 from langstack_chat.session.threads import get_threads_postgres, get_threads_sqlite
 from langstack_chat.utils.console import console
+from langstack_chat.utils.logging import get_logger
 
+logger = get_logger(__name__)
 config = CliConfig()
-SQLITE_PATH = "chat_sessions.db"
+SQLITE_PATH = config.sqlite_path
 
 
 def _pick_thread(existing: list[str]) -> str:
@@ -71,4 +73,5 @@ def setup_checkpointer():
             checkpointer.setup()
             thread_id = _pick_thread(get_threads_postgres())
 
+    logger.info("Checkpointer ready: %s | thread: %s", db_choice, thread_id)
     return checkpointer, thread_id, _saver, db_choice

@@ -13,8 +13,8 @@ def handle_slash_command(thread_config: dict, checkpointer, db_choice: str) -> d
             questionary.Choice("New thread", value="new_thread"),
             questionary.Choice("Switch thread", value="switch_thread"),
             questionary.Choice("Delete thread", value="delete_thread"),
-            questionary.Choice("Change model", value="change_model"),
-            questionary.Choice("Change memory mode", value="change_memory"),
+            # questionary.Choice("Change model", value="change_model"),
+            # questionary.Choice("Change memory mode", value="change_memory"),
             questionary.Choice("Cancel", value="cancel"),
         ],
     ).ask()
