@@ -15,6 +15,8 @@ class AppConfig(BaseSettings):
     default_model: str = ""
     default_provider: str = "Llama.cpp"
     base_url: str = "http://127.0.0.1:8080/v1"
+    aws_region: str = "us-east-1"
+    sqlite_path: str = "chat_sessions.db"
 
     class Config:
         env_prefix = ""  # No prefix for env vars
@@ -117,3 +119,7 @@ class CliConfig:
     @property
     def base_url(self) -> str:
         return self.settings.base_url
+
+    @property
+    def sqlite_path(self) -> str:
+        return self.settings.sqlite_path
