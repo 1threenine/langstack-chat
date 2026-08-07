@@ -1,4 +1,3 @@
-import logging
 from openai import APIConnectionError, APIError, OpenAIError
 from psycopg2 import OperationalError
 import questionary
@@ -6,13 +5,17 @@ from rich.panel import Panel
 from rich.markdown import Markdown
 
 from langstack_chat.config import CliConfig
-from langstack_chat.agent import build_llm, build_agent
+from langstack_chat.agent import build_llm, build_agent, fetch_models
 from langstack_chat.session.memory import setup_checkpointer
 from langstack_chat.session.commands import handle_slash_command
 from langstack_chat.utils.console import console
+from langstack_chat.utils.logging import setup_logging, get_logger
+
+setup_logging()
+logger = get_logger(__name__)
+
 
 config = CliConfig()
-logger = logging.getLogger(__name__)
 
 console.print(Panel(f"[bold cyan]Chat CLI Using {config.default_provider}[/bold cyan]"))
 
@@ -20,7 +23,20 @@ console.print(Panel(f"[bold cyan]Chat CLI Using {config.default_provider}[/bold 
 def main():
     _saver = None
     try:
-        llm = build_llm()
+        while True:
+            provider = questionary.select(
+                "Select provider:", choices=["Llama.cpp", "OpenAI", "Bedrock"]
+            ).ask()
+
+            models = fetch_models(provider)
+            if models:
+                break
+            console.print("[red]Could not connect to provider or invalid API key. Try another.[/red]")
+
+        model = questionary.select("Select model:", choices=models).ask()
+
+        llm = build_llm(provider, model)
+
         checkpointer, thread_id, _saver, db_choice = setup_checkpointer()
         agent = build_agent(llm, checkpointer)
         thread_config = {"configurable": {"thread_id": thread_id}}
@@ -43,10 +59,13 @@ def main():
             console.print(":robot: Agent: ", Markdown(result))
 
     except OperationalError:
-        logger.error("PostgreSQL is not running or connection failed.")
+        logger.error("PostgreSQL is not running or connection failed.", exc_info=False)
     except (APIConnectionError, APIError, OpenAIError) as e:
-        logger.error(e)
+        logger.error("LLM provider error: %s", e, exc_info=False)
+    except KeyboardInterrupt:
+        pass
     finally:
         if _saver is not None:
             _saver.__exit__(None, None, None)
+        logger.info("Fin")
         console.print("\n[bold green]Fin")
