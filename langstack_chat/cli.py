@@ -10,6 +10,8 @@ from langstack_chat.session.memory import setup_checkpointer
 from langstack_chat.session.commands import handle_slash_command
 from langstack_chat.utils.console import console
 from langstack_chat.utils.logging import setup_logging, get_logger
+from langstack_chat.utils.retry import with_retry
+
 
 setup_logging()
 logger = get_logger(__name__)
@@ -51,10 +53,17 @@ def main():
                 continue
 
             with console.status("[bold yellow]Agent thinking...", spinner="dots"):
-                result = agent.invoke(
-                    {"messages": [{"role": "user", "content": q}]},
-                    thread_config,
-                )["messages"][-1].content
+                try:
+                    result = with_retry(
+                        lambda: agent.invoke(
+                            {"messages": [{"role": "user", "content": q}]},
+                            thread_config,
+                        )["messages"][-1].content
+                    )
+                except RuntimeError as e:
+                    logger.error("Agent failed: %s", e)
+                    console.print("[red]Could not get a response. Try again.[/red]")
+                    continue
 
             console.print(":robot: Agent: ", Markdown(result))
 
