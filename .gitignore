@@ -158,6 +158,7 @@ env.bak/
 venv.bak/
 tmp/
 .config/
+chat_sessions.db
 
 # Spyder project settings
 .spyderproject
