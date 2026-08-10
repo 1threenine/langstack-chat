@@ -4,6 +4,7 @@ import questionary
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.checkpoint.postgres import PostgresSaver
 from langgraph.checkpoint.sqlite import SqliteSaver
+from psycopg2 import OperationalError
 
 from langstack_chat.config import CliConfig
 from langstack_chat.session.threads import get_threads_postgres, get_threads_sqlite
@@ -67,11 +68,15 @@ def setup_checkpointer():
             thread_id = _pick_thread(get_threads_sqlite(SQLITE_PATH))
 
         elif db_choice == "postgres":
-            psycopg2.connect(config.psql_url).close()
-            _saver = PostgresSaver.from_conn_string(config.psql_url)
-            checkpointer = _saver.__enter__()
-            checkpointer.setup()
-            thread_id = _pick_thread(get_threads_postgres())
+            try:
+                psycopg2.connect(config.psql_url).close()
+                _saver = PostgresSaver.from_conn_string(config.psql_url)
+                checkpointer = _saver.__enter__()
+                checkpointer.setup()
+                thread_id = _pick_thread(get_threads_postgres())
+            except OperationalError:
+                console.print("[red]PostgreSQL unreachable. Choose another option.[/red]")
+                return setup_checkpointer()
 
     logger.info("Checkpointer ready: %s | thread: %s", db_choice, thread_id)
     return checkpointer, thread_id, _saver, db_choice
