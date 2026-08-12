@@ -2,9 +2,10 @@ import uuid
 import questionary
 from langstack_chat.session.threads import get_threads_postgres, get_threads_sqlite
 from langstack_chat.utils.console import console
+from langstack_chat.config import CliConfig
 
-SQLITE_PATH = "chat_sessions.db"
-
+config = CliConfig()
+SQLITE_PATH = config.sqlite_path
 
 def handle_slash_command(thread_config: dict, checkpointer, db_choice: str) -> dict:
     action = questionary.select(

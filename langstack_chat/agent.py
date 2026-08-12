@@ -1,4 +1,4 @@
-from langchain.agents import create_agent
+# from langchain.agents import create_agent
 from langchain_aws import ChatBedrock
 from langchain_openai import ChatOpenAI
 from langstack_chat.config import CliConfig
@@ -47,10 +47,14 @@ def fetch_models(provider: str) -> list[str]:
         logger.error("Failed to fetch models for %s: %s", provider, e)
         return []
 
+# def build_agent(llm, checkpointer):
+#     return create_agent(
+#         llm,
+#         tools=ALL_TOOLS,
+#         system_prompt="You are a helpful assistant",
+#         checkpointer=checkpointer,
+#     )
+from langstack_chat.workflow.graph import build_graph
+
 def build_agent(llm, checkpointer):
-    return create_agent(
-        llm,
-        tools=ALL_TOOLS,
-        system_prompt="You are a helpful assistant",
-        checkpointer=checkpointer,
-    )
+    return build_graph(llm, checkpointer)

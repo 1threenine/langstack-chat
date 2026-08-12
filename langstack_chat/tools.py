@@ -1,6 +1,5 @@
 from datetime import datetime
 from ddgs import DDGS
-from typing import List
 from langchain.tools import tool
 from langstack_chat.utils.console import console
 from functools import wraps
