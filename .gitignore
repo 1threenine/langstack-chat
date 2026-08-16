@@ -159,6 +159,10 @@ venv.bak/
 tmp/
 .config/
 chat_sessions.db
+.userdata/
+.logs/
+.chroma/
+
 
 # Spyder project settings
 .spyderproject
