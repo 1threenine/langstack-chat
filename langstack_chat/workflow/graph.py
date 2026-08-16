@@ -6,6 +6,7 @@ from langstack_chat.workflow.state import AgentState
 from langstack_chat.workflow.nodes import classify_intent, guardrail, run_llm, retry_llm
 from langstack_chat.tools import ALL_TOOLS
 from langstack_chat.utils.logging import get_logger
+from langstack_chat.workflow.nodes import rag_node
 
 logger = get_logger(__name__)
 
@@ -15,6 +16,8 @@ def _route(state: AgentState) -> str:
     intent = state.get("intent")
     if intent == "unsafe":
         return "guardrail"
+    if intent == "rag":
+        return "rag"
     return "llm"
 
 def _should_retry(state: AgentState) -> str:
@@ -38,14 +41,9 @@ def build_graph(llm, checkpointer):
     graph.add_node("llm", partial(run_llm, llm=llm, tools=ALL_TOOLS))
     graph.add_node("tools", ToolNode(ALL_TOOLS))
     graph.add_node("retry", partial(retry_llm, llm=llm, tools=ALL_TOOLS))
-
+    graph.add_node("rag", partial(rag_node, llm=llm))
 
     graph.set_entry_point("classifier")
-
-    graph.add_conditional_edges("classifier", _route, {
-        "guardrail": "guardrail",
-        "llm": "llm",
-    })
 
     # if LLM calls a tool, execute it then come back to LLM
     # graph.add_conditional_edges("llm", lambda s: "tools" if s["messages"][-1].tool_calls else END, {
@@ -53,14 +51,23 @@ def build_graph(llm, checkpointer):
     #     END: END,
     # })
 
+    # this is defined but never wired
     graph.add_conditional_edges("llm", _should_retry, {
         "tools": "tools",
         "retry": "retry",
         END: END,
     })
 
+
+    graph.add_conditional_edges("classifier", _route, {
+        "guardrail": "guardrail",
+        "rag": "rag",
+        "llm": "llm",
+    })
+
     graph.add_edge("tools", "llm")
     graph.add_edge("retry", "llm")
+    graph.add_edge("rag", END)
     graph.add_edge("guardrail", END)
 
     return graph.compile(checkpointer=checkpointer)

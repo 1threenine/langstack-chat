@@ -16,7 +16,9 @@ class AppConfig(BaseSettings):
     default_provider: str = "Llama.cpp"
     base_url: str = "http://127.0.0.1:8080/v1"
     aws_region: str = "us-east-1"
-    sqlite_path: str = "chat_sessions.db"
+    sqlite_path: str = ".userdata/chat_sessions.db"
+    embedding_base_url: str = "http://127.0.0.1:8085/v1"
+    data_dir: str = ".userdata"
 
     class Config:
         env_prefix = ""  # No prefix for env vars
@@ -123,3 +125,13 @@ class CliConfig:
     @property
     def sqlite_path(self) -> str:
         return self.settings.sqlite_path
+
+    @property
+    def embedding_base_url(self) -> str:
+        return self.settings.embedding_base_url
+
+    @property
+    def data_dir(self) -> Path:
+        path = Path(self.settings.data_dir)
+        path.mkdir(parents=True, exist_ok=True)
+        return path
